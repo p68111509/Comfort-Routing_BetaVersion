@@ -13,8 +13,8 @@ from pyproj import Transformer
 import base64
 
 # ========== 系統參數 ==========
-# map_center = [25.04, 121.56]  # 台北市中心
-map_center = [24.1477, 120.6736]  # 台中市中心
+map_center = [25.04, 121.56]  # 台北市中心
+# map_center = [24.1477, 120.6736]  # 台中市中心
 
 # ========== 關閉雙擊放大 ==========
 class DisableDoubleClickZoom(MacroElement):
@@ -29,7 +29,7 @@ class DisableDoubleClickZoom(MacroElement):
 # ========== 讀取圖 ==========
 @st.cache_resource
 def load_graph():
-    pkl_path = r"data/台中路網_濃度與暴露_最大連通版.pkl"
+    pkl_path = r"data/雙北基隆路網_濃度與暴露_最大連通版.pkl"
     with open(pkl_path, "rb") as f:
         G = pickle.load(f)
 
@@ -151,10 +151,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-col1, col2, col3, col4 = st.columns([6, 0.5, 6, 1])
+col1, col2, col3, col4 = st.columns([6, 0.5, 6, 0.5])
 
 with col1:
-    # 標題
     st.markdown("""
         <h1 style="
             font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
@@ -167,18 +166,25 @@ with col1:
             line-height: 1.2;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         ">
-            Geo-AI 路徑好空氣<br>
+            Geo-AI 舒適路徑系統<br>
             <span style="
                 font-size: 16px;
                 font-weight: 500;
                 color: #666666;
             ">
-                台北市 & 新北市
+                大台北地區
             </span>
         </h1>
     """, unsafe_allow_html=True)
+    # with col_gemini:
+    #     # if "set_start_address" in st.session_state:
+    #     #     st.session_state.start_address = st.session_state.pop("set_start_address")
+    #     gemini_sentense = st.text_input(label="", placeholder="跟 Gemini 說點什麼", key="Gemini")
+
+
 
     if "transport_mode" not in st.session_state:
+        selected_mode = "機車"
         st.session_state.transport_mode = "機車"
 
     G = load_graph()
@@ -208,11 +214,11 @@ with col1:
     ###### 權重調整
     row4 = st.columns([1,1,1])
     with row4[0]:
-        pm25_weight = st.slider("PM2.5 權重 (%)", 0, 100, 50, step=10, key="pm25_weight")
+        pm25_weight = st.slider("PM₂․₅ 權重 (%)", 0, 100, 50, step=10, key="pm25_weight")
     with row4[1]:
         no2_weight = st.slider("NO₂ 權重 (%)", 0, 100, 30, step=10, key="no2_weight")
     with row4[2]:
-        WBGT_weight = st.slider("溫度 權重 (%)", 0, 100, 80, step=10, key="WBGT_weight")
+        WBGT_weight = st.slider("氣溫 權重 (%)", 0, 100, 80, step=10, key="WBGT_weight")
 
 
 
@@ -380,18 +386,18 @@ with col1:
         # 變化率 (%)：以累積值為基礎（最低暴露路徑相較最短路徑）
         improve_pm25 = (PM25_acc2 - PM25_acc1) / PM25_acc1 * 100 if PM25_acc1 else 0
         improve_no2 = (NO2_acc2 - NO2_acc1) / NO2_acc1 * 100 if NO2_acc1 else 0
-        improve_wbgt = (WBGT_acc2 - WBGT_acc1) / WBGT_acc1 * 100 if WBGT_acc1 else 0
-        improve_time = (time_min2 - time_min1) / time_min1 * 100 if time_min1 else 0
+        improve_wbgt = rate_wbgt_2 - rate_wbgt_1 if WBGT_acc1 else 0
+        improve_time = time_min2 - time_min1
 
         df = pd.DataFrame({
             "時間/平均暴露": ["預估時間", "PM₂․₅", "NO₂", "氣溫"],
             "🟦最短路徑": [round(time_min1, 2), round(rate_pm25_1, 2), round(rate_no2_1, 2), round(rate_wbgt_1, 2)],
             "🟩舒適路徑": [round(time_min2, 2), round(rate_pm25_2, 2), round(rate_no2_2, 2), round(rate_wbgt_2, 2)],
             "變化率": [
-                f"{round(improve_time, 1)}%",
-                f"{round(improve_pm25, 1)}%",
-                f"{round(improve_no2, 1)}%",
-                f"{round(improve_wbgt, 1)}%"
+                f"{round(improve_time, 2)} min",
+                f"{round(improve_pm25, 2)} %",
+                f"{round(improve_no2, 2)} %",
+                f"{round(improve_wbgt, 2)} °C"
             ]
         })
 
@@ -657,7 +663,7 @@ with col3:
                     "top": 2919204.773102
                 }
             },
-            "WBGT": {
+            "氣溫": {
                 "path": "data/WBGT_全台.png",
                 "bounds_twd97": {
                     "left": 147522.218800,
@@ -670,11 +676,11 @@ with col3:
 
         # 更新狀態
         if st.session_state.get("active_overlay") == "PM2.5":
-            st.session_state.active_overlay = "PM2.5"
+            st.session_state.active_overlay = "PM₂.₅"
         if st.session_state.get("active_overlay") == "NO2":
             st.session_state.active_overlay = "NO₂"
-        if st.session_state.get("active_overlay") == "WBGT":
-            st.session_state.active_overlay = "WBGT"
+        if st.session_state.get("active_overlay") == "氣溫":
+            st.session_state.active_overlay = "氣溫"
 
         # 顯示對應疊圖層
         if "active_overlay" in st.session_state:
@@ -702,7 +708,7 @@ with col3:
                 ).add_to(m)
 
 
-        st_data = st_folium(m, width=600, height=650)
+        st_data = st_folium(m, width=600, height=600)
 
         if not st.session_state.disable_inputs and st_data and st_data.get("last_clicked"):
             latlon = [st_data["last_clicked"]["lat"], st_data["last_clicked"]["lng"]]
@@ -733,6 +739,7 @@ def image_to_base64(image_path):
         encoded = base64.b64encode(img_file.read()).decode()
     return f"data:image/jpeg;base64,{encoded}"
 
+logo_MOE_base64 = image_to_base64("logo/環境部.jpg")
 logo_NCKU_base64 = image_to_base64("logo/成大_白色水平.jpg")
 logo_GEH_base64 = image_to_base64("logo/實驗室_紅色長方形.jpg")
 
@@ -743,7 +750,7 @@ st.markdown(f"""
     <div style="text-align: center; font-size: 13px; color: #666; font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;">
         <p style="margin-bottom: 4px;">
             © 2025 許家瑋 林祐如｜國立成功大學 測量及空間資訊學系｜指導老師：吳治達 教授<br>
-            聯絡信箱：<a href="mailto:p68111509@gs.ncku.edu.tw">p68111509@gs.ncku.edu.tw</a>｜GitHub 專案：<a href="https://github.com/p68111509/low-exposure-routing_demo" target="_blank">low-exposure-routing_demo</a>
+            聯絡信箱：<a href="mailto:p68111509@gs.ncku.edu.tw">p68111509@gs.ncku.edu.tw</a>｜GitHub 專案：<a href="https://github.com/p68111509/Health-routing_Taichung" target="_blank">Health-routing_Taichung</a>
         </p>
         <p style="margin-top: 6px; margin-bottom: 10px;">
             部分空氣汙染空間資訊參考自環境部公開資料
@@ -757,6 +764,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-
+# <img src="{logo_MOE_base64}" alt="MOE logo" width="90" style="margin-bottom: 10px;">
 #  © 2025 許家瑋 林祐如｜國立成功大學 測量及空間資訊學系｜指導老師：吳治達 教授
 # 聯絡信箱：<a href="mailto:p68111509@gs.ncku.edu.tw">p68111509@gs.ncku.edu.tw</a>｜GitHub 專案： <a href="https://github.com/p68111509/low-exposure-routing_demo" target="_blank">low-exposure-routing_demo</a>
