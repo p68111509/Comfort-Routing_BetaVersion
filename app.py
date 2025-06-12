@@ -510,6 +510,8 @@ with col1:
                 </div>
             """, unsafe_allow_html=True)
 
+        st.divider()
+
     with tab2:
         st.markdown("🏃‍♂️ 運動模式還沒做完，下個月再來")
 
@@ -525,6 +527,10 @@ with col1:
             if "set_run_mins" in st.session_state:
                 st.session_state.run_mins = st.session_state.pop("set_run_mins")
             run_mins = st.text_input(label="", placeholder="⌛配速 (秒)", key="run_mins")
+
+
+
+        st.divider()
             
 
 
