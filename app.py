@@ -510,6 +510,8 @@ with col1:
                 </div>
             """, unsafe_allow_html=True)
 
+    with tab2:
+        st.markdown("🏃‍♂️ 路跑模式還沒做，下個月再來")
 
 with col3:
 
