@@ -182,7 +182,7 @@ col1, col2, col3, col4 = st.columns([6, 0.5, 6, 0.5])
 
 with col1:
 
-    tab1, tab2 = st.tabs(["🚘 通勤模式", "🏃‍♂️ 路跑模式"])
+    tab1, tab2 = st.tabs(["🚘 通勤模式", "🏃‍♂️ 運動模式"])
 
     with tab1:
 
@@ -511,8 +511,27 @@ with col1:
             """, unsafe_allow_html=True)
 
     with tab2:
-        st.markdown("🏃‍♂️ 路跑模式還沒做，下個月再來")
+        st.markdown("🏃‍♂️ 運動模式還沒做完，下個月再來")
 
+        # 起迄點地址輸入
+        row_address = st.columns([1, 1])
+        with row_address[0]:
+            if "set_start_end_address" in st.session_state:
+                st.session_state.start_end_address = st.session_state.pop("set_start_end_address")
+            start_end_address = st.text_input(label="", placeholder="🟢起迄地址", key="start_end_address")
+
+        # 配速輸入
+        with row_address[1]:
+            if "set_run_mins" in st.session_state:
+                st.session_state.run_mins = st.session_state.pop("set_run_mins")
+            run_mins = st.text_input(label="", placeholder="⌛配速 (秒)", key="run_mins")
+            
+
+
+
+
+
+        
 with col3:
 
 
